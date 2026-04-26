@@ -56,7 +56,10 @@ export async function processWithGemini(text: string, apiKey: string, model: str
           ]
         }],
         generationConfig: {
-          responseMimeType: "application/json"
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
         }
       })
     })
@@ -69,12 +72,19 @@ export async function processWithGemini(text: string, apiKey: string, model: str
     }
 
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text
-
     if (!content) {
       throw new Error("Gemini não retornou nenhum conteúdo.")
     }
 
-    return JSON.parse(content) as GeminiResponse
+    // Tenta limpar blocos de código markdown se existirem
+    const jsonString = content.replace(/```json\n?|```/g, '').trim()
+
+    try {
+      return JSON.parse(jsonString) as GeminiResponse
+    } catch (e) {
+      console.warn('Failed to parse AI response as JSON, returning as explanation', content)
+      return { explanation: content }
+    }
   } catch (err: any) {
     console.error('Gemini Error:', err)
     throw err
