@@ -83,7 +83,7 @@ export default function App() {
     spotifyClientId: '', 
     elevenLabsApiKey: '', 
     geminiApiKey: '',
-    geminiModel: 'gemini-1.5-flash' 
+    geminiModel: 'gemini-2.0-flash' 
   })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
@@ -134,11 +134,11 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        let model = parsed.geminiModel || 'gemini-1.5-flash'
+        let model = parsed.geminiModel || 'gemini-2.0-flash'
         
         // CORREÇÃO: Força a troca do modelo antigo que dava erro 404
-        if (model.includes('-latest')) {
-          model = 'gemini-1.5-flash'
+        if (model.includes('-latest') || model.includes('1.5')) {
+          model = 'gemini-2.0-flash'
         }
 
         setConfig({

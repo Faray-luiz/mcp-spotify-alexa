@@ -109,14 +109,14 @@ export default function SettingsModal({ isOpen, config, onClose, onSave }: Props
               onChange={e => setForm({ ...form, geminiModel: e.target.value })}
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all appearance-none"
             >
-              <option value="gemini-3.1-flash" className="bg-[#1a1a2e]">Gemini 3.1 Flash (Novo/Rápido)</option>
+              <option value="gemini-2.0-flash" className="bg-[#1a1a2e]">Gemini 2.0 Flash (Padrão)</option>
+              <option value="gemini-2.0-pro" className="bg-[#1a1a2e]">Gemini 2.0 Pro</option>
               <option value="gemini-2.5-flash" className="bg-[#1a1a2e]">Gemini 2.5 Flash</option>
-              <option value="gemini-1.5-flash" className="bg-[#1a1a2e]">Gemini 1.5 Flash (Clássico)</option>
-              <option value="gemini-1.5-pro" className="bg-[#1a1a2e]">Gemini 1.5 Pro (Poderoso)</option>
+              <option value="gemini-1.5-flash" className="bg-[#1a1a2e]">Gemini 1.5 Flash (Fallback)</option>
             </select>
           </div>
 
-          {/* ElevenLabs (Optional / Hidden for now to simplify) */}
+          {/* ElevenLabs */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-white/40 uppercase tracking-wider ml-1 flex items-center gap-2">
               <ExternalLink className="w-3 h-3" /> ElevenLabs API Key (Opcional)
