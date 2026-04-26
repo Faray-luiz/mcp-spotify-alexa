@@ -119,6 +119,8 @@ export default function App() {
     if (token) await apiSetVolume(originalVolume, token, getDeviceId() ?? undefined)
   }
 
+  const commandTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const startVigilance = useCallback(() => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR || recognitionRef.current) return
@@ -128,31 +130,51 @@ export default function App() {
     recognition.continuous = true
     recognition.interimResults = true
 
-    recognition.onstart = () => addLog('mcp', '⚓ Vasco em vigília...')
+    recognition.onstart = () => {
+      addLog('mcp', '⚓ Vasco em vigília...')
+      console.log('🎤 Vasco Listening...')
+    }
     
     recognition.onresult = async (e: any) => {
       const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase()
+      console.log('👂 Vasco ouviu:', transcript)
       
-      // Gatilho: Escuta o nome "Vasco"
+      // 1. Detecção do Gatilho
       if (!isWakeWordDetected && transcript.includes('vasco')) {
+        console.log('🎯 Gatilho detectado!')
         setIsWakeWordDetected(true)
         setMcpStatus('listening')
         await duckVolume()
+        return
       } 
-      // Se o gatilho foi ativado, espera o final da frase para processar o comando
-      else if (isWakeWordDetected && e.results[e.results.length - 1].isFinal) {
-        const command = transcript.replace(/.*vasco\s*/, '').trim()
-        if (command) {
-          dispatchMCP(command)
+      
+      // 2. Processamento do Comando (com Time-out de Silêncio)
+      if (isWakeWordDetected) {
+        if (commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current)
+        
+        // Se o navegador disser que terminou OU se houver silêncio por 1.5s
+        const process = () => {
+          const command = transcript.replace(/.*vasco\s*/, '').trim()
+          if (command && command.length > 2) {
+            console.log('🚀 Disparando comando:', command)
+            dispatchMCP(command)
+            setIsWakeWordDetected(false)
+          }
         }
-        setIsWakeWordDetected(false)
+
+        if (e.results[e.results.length - 1].isFinal) {
+          process()
+        } else {
+          // Time-out de 1.5 segundos de silêncio para forçar o comando
+          commandTimeoutRef.current = setTimeout(process, 1500)
+        }
       }
     }
 
     recognition.onend = () => {
       recognitionRef.current = null
-      // Auto-restart vigilância se não estiver processando
-      if (mcpStatus === 'idle') startVigilance()
+      console.log('🎤 Mic End. Restarting if idle...')
+      if (mcpStatus === 'idle') setTimeout(startVigilance, 100)
     }
 
     recognitionRef.current = recognition
