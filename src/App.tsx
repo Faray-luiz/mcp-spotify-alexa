@@ -96,6 +96,7 @@ export default function App() {
   const recognitionRef = useRef<any>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const isConnected = !!spotifyUser
+  const isWakeWordDetectedRef = useRef(false)
   const audioContextRef = useRef<AudioContext | null>(null)
 
   const startVasco = async () => {
@@ -104,19 +105,18 @@ export default function App() {
     if (ctx.state === 'suspended') await ctx.resume()
     audioContextRef.current = ctx
     
-    // 2. Toca um bipe de teste para confirmar o som
+    // 2. Toca um bipe de teste para confirmar o som (Mais nítido - Nota Lá)
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.connect(gain); gain.connect(ctx.destination)
-    osc.frequency.value = 800; gain.gain.value = 0.1
-    osc.start(); osc.stop(ctx.currentTime + 0.1)
+    osc.frequency.setValueAtTime(880, ctx.currentTime) 
+    gain.gain.setValueAtTime(0.1, ctx.currentTime)
+    osc.start(); osc.stop(ctx.currentTime + 0.15)
 
     // 3. Ativa o App e a Escuta
     setIsVascoReady(true)
-    setTimeout(() => {
-       startVigilance()
-    }, 500)
-    addLog('mcp', '⚓ Vasco Ativado e Ouvindo!')
+    setTimeout(() => { startVigilance() }, 500)
+    addLog('mcp', '⚓ Vasco Ativado!')
   }
 
   const getToken = useCallback(async () => {
@@ -153,35 +153,35 @@ export default function App() {
     recognition.continuous = true
     recognition.interimResults = true
 
-    recognition.onstart = () => {
-      addLog('mcp', '⚓ Vasco em vigília...')
-      console.log('🎤 Vasco Listening...')
-    }
+    recognition.onstart = () => { console.log('🎤 Vasco Listening...') }
     
     recognition.onresult = async (e: any) => {
       const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase()
       console.log('👂 Vasco ouviu:', transcript)
       
-      // 1. Detecção do Gatilho
-      if (!isWakeWordDetected && transcript.includes('vasco')) {
-        console.log('🎯 Gatilho detectado!')
+      // 1. Gatilho (Vasco)
+      if (!isWakeWordDetectedRef.current && transcript.includes('vasco')) {
+        isWakeWordDetectedRef.current = true
         setIsWakeWordDetected(true)
         setMcpStatus('listening')
         await duckVolume()
         
-        // Feedback sonoro (Bipe sutil)
+        // Bipe de Ativação (Nota Lá 1000Hz)
         if (audioContextRef.current) {
           const osc = audioContextRef.current.createOscillator()
           const gain = audioContextRef.current.createGain()
           osc.connect(gain); gain.connect(audioContextRef.current.destination)
-          osc.frequency.value = 600; gain.gain.value = 0.1
+          osc.frequency.setValueAtTime(1000, audioContextRef.current.currentTime)
+          gain.gain.setValueAtTime(0.1, audioContextRef.current.currentTime)
           osc.start(); osc.stop(audioContextRef.current.currentTime + 0.1)
         }
 
-        // Timeout de reset
+        // Reset de Segurança (7 segundos) - Agora funciona com Ref!
         if (commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current)
         commandTimeoutRef.current = setTimeout(() => {
-          if (isWakeWordDetected) {
+          if (isWakeWordDetectedRef.current) {
+            console.log('⏰ Resetando Vasco por inatividade...')
+            isWakeWordDetectedRef.current = false
             setIsWakeWordDetected(false)
             setMcpStatus('idle')
             restoreVolume()
@@ -190,14 +190,16 @@ export default function App() {
         return
       } 
       
-      // 2. Processamento do Comando
-      if (isWakeWordDetected) {
+      // 2. Comando
+      if (isWakeWordDetectedRef.current) {
         if (commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current)
         
         const process = () => {
           const command = transcript.replace(/.*vasco\s*/, '').trim()
-          if (command) {
+          if (command && isWakeWordDetectedRef.current) {
+            console.log('🚀 Disparando comando:', command)
             dispatchMCP(command)
+            isWakeWordDetectedRef.current = false
             setIsWakeWordDetected(false)
           }
         }
@@ -205,6 +207,7 @@ export default function App() {
         if (e.results[e.results.length - 1].isFinal) {
           process()
         } else {
+          // Time-out de silêncio para confirmar comando (2s)
           commandTimeoutRef.current = setTimeout(process, 2000)
         }
       }
@@ -397,7 +400,21 @@ export default function App() {
             )}
           </div>
         ) : (
-          <VoiceAura status={mcpStatus} isWakeWordDetected={isWakeWordDetected} />
+          <>
+            <VoiceAura status={mcpStatus} isWakeWordDetected={isWakeWordDetected} />
+            
+            <div className="mt-12 text-center space-y-2">
+               <p className="text-3xl font-black italic tracking-tighter uppercase">
+                 {mcpStatus === 'listening' ? 'OUVINDO...' : 
+                  mcpStatus === 'processing' ? 'PENSANDO...' : 
+                  mcpStatus === 'speaking' ? 'FALANDO...' : 
+                  isWakeWordDetected ? 'VASCO?' : 'Diga "VASCO"'}
+               </p>
+               <p className="text-white/20 text-xs font-bold tracking-[0.2em] uppercase">
+                 Assistente de Voz Ativo
+               </p>
+            </div>
+          </>
         )}
 
         {/* Logs Discretos */}
