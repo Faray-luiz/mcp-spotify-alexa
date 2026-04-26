@@ -42,7 +42,7 @@ export async function processWithGemini(text: string, apiKey: string): Promise<G
     return { explanation: "API Key do Gemini não configurada." }
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
 
   try {
     const response = await fetch(url, {
@@ -62,15 +62,21 @@ export async function processWithGemini(text: string, apiKey: string): Promise<G
     })
 
     const data = await response.json()
+
+    if (!response.ok) {
+      const errorMsg = data.error?.message || response.statusText
+      throw new Error(`Gemini API Error (${response.status}): ${errorMsg}`)
+    }
+
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text
 
     if (!content) {
-      return { explanation: "Não consegui processar seu comando no momento." }
+      throw new Error("Gemini não retornou nenhum conteúdo.")
     }
 
     return JSON.parse(content) as GeminiResponse
-  } catch (err) {
+  } catch (err: any) {
     console.error('Gemini Error:', err)
-    return { explanation: "Ocorreu um erro ao falar com o Gemini." }
+    throw err
   }
 }
