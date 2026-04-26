@@ -288,27 +288,27 @@ export default function App() {
     setCurrentCommand(text)
     addLog('user', `🎤 "${text}"`)
     setMcpStatus('processing')
-
-    // 1. Ask Gemini what to do
-    const aiResponse = await processWithGemini(text, config.geminiApiKey)
     
-    if (aiResponse.thought) {
-      console.log('AI Thought:', aiResponse.thought)
-    }
-
-    const { tool, args, explanation } = aiResponse
-
-    if (!tool && !explanation) {
-      addLog('mcp', '💡 Não entendi o comando.')
-      setMcpStatus('idle')
-      setCurrentCommand('')
-      return
-    }
-
-    // 2. Execute local or MCP action
-    let toolResult: any = null
-
     try {
+      // 1. Ask Gemini what to do
+      const aiResponse = await processWithGemini(text, config.geminiApiKey)
+      
+      if (aiResponse.thought) {
+        console.log('AI Thought:', aiResponse.thought)
+      }
+
+      const { tool, args, explanation } = aiResponse
+
+      if (!tool && !explanation) {
+        addLog('mcp', '💡 Não entendi o comando.')
+        setMcpStatus('idle')
+        setCurrentCommand('')
+        return
+      }
+
+      // 2. Execute local or MCP action
+      let toolResult: any = null
+
       if (tool === '__next') {
         const token = await getToken()
         if (token) { await skipToNext(token, getDeviceId() ?? undefined); await pollCurrentTrack() }
@@ -359,9 +359,10 @@ export default function App() {
         await speak(explanation, config.elevenLabsApiKey)
       }
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Dispatch Error:', err)
-      addLog('error', 'Erro ao processar ação.')
+      const errorMsg = err.message || 'Erro ao processar'
+      addLog('error', `❌ AI Erro: ${errorMsg}`)
     }
 
     setMcpStatus('idle')
