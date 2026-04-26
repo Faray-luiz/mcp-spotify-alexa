@@ -83,6 +83,7 @@ export default function App() {
   const [track, setTrack] = useState<TrackInfo>(DEFAULT_TRACK)
   const [volume, setVolumeState] = useState(72)
   const [mcpStatus, setMcpStatus] = useState<'idle' | 'listening' | 'processing' | 'speaking' | 'error'>('idle')
+  const [isVascoReady, setIsVascoReady] = useState(false)
   const [isWakeWordDetected, setIsWakeWordDetected] = useState(false)
   const [originalVolume, setOriginalVolume] = useState(72)
   const [showConsole, setShowConsole] = useState(false)
@@ -95,6 +96,28 @@ export default function App() {
   const recognitionRef = useRef<any>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const isConnected = !!spotifyUser
+  const audioContextRef = useRef<AudioContext | null>(null)
+
+  const startVasco = async () => {
+    // 1. Desbloqueia Áudio (Fundamental para bipe e voz)
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    if (ctx.state === 'suspended') await ctx.resume()
+    audioContextRef.current = ctx
+    
+    // 2. Toca um bipe de teste para confirmar o som
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain); gain.connect(ctx.destination)
+    osc.frequency.value = 800; gain.gain.value = 0.1
+    osc.start(); osc.stop(ctx.currentTime + 0.1)
+
+    // 3. Ativa o App e a Escuta
+    setIsVascoReady(true)
+    setTimeout(() => {
+       startVigilance()
+    }, 500)
+    addLog('mcp', '⚓ Vasco Ativado e Ouvindo!')
+  }
 
   const getToken = useCallback(async () => {
     const cfg = JSON.parse(localStorage.getItem('mcp-spotify-config-v2') || '{}')
@@ -146,19 +169,19 @@ export default function App() {
         setMcpStatus('listening')
         await duckVolume()
         
-        // Feedback sonoro (Bipe sutil do navegador)
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.connect(gain); gain.connect(ctx.destination)
-        osc.frequency.value = 600; gain.gain.value = 0.1
-        osc.start(); osc.stop(ctx.currentTime + 0.1)
+        // Feedback sonoro (Bipe sutil)
+        if (audioContextRef.current) {
+          const osc = audioContextRef.current.createOscillator()
+          const gain = audioContextRef.current.createGain()
+          osc.connect(gain); gain.connect(audioContextRef.current.destination)
+          osc.frequency.value = 600; gain.gain.value = 0.1
+          osc.start(); osc.stop(audioContextRef.current.currentTime + 0.1)
+        }
 
-        // Se passar 7 segundos sem comando, reseta o Vasco (Anti-travamento)
+        // Timeout de reset
         if (commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current)
         commandTimeoutRef.current = setTimeout(() => {
           if (isWakeWordDetected) {
-            console.log('⏰ Timeout: Nenhum comando ouvido após o gatilho.')
             setIsWakeWordDetected(false)
             setMcpStatus('idle')
             restoreVolume()
@@ -174,7 +197,6 @@ export default function App() {
         const process = () => {
           const command = transcript.replace(/.*vasco\s*/, '').trim()
           if (command) {
-            console.log('🚀 Disparando comando:', command)
             dispatchMCP(command)
             setIsWakeWordDetected(false)
           }
@@ -183,7 +205,6 @@ export default function App() {
         if (e.results[e.results.length - 1].isFinal) {
           process()
         } else {
-          // 2 segundos de silêncio para confirmar o comando
           commandTimeoutRef.current = setTimeout(process, 2000)
         }
       }
@@ -191,16 +212,15 @@ export default function App() {
 
     recognition.onend = () => {
       recognitionRef.current = null
-      console.log('🎤 Mic End. Restarting if idle...')
-      if (mcpStatus === 'idle') setTimeout(startVigilance, 100)
+      if (mcpStatus === 'idle' && isVascoReady) setTimeout(startVigilance, 100)
     }
 
     recognitionRef.current = recognition
     recognition.start()
-  }, [isWakeWordDetected, mcpStatus, volume, getToken])
+  }, [isWakeWordDetected, mcpStatus, volume, getToken, isVascoReady])
 
   useEffect(() => {
-    if (isConnected && sdkStatus === 'ready' && mcpStatus === 'idle') {
+    if (isConnected && sdkStatus === 'ready' && mcpStatus === 'idle' && isVascoReady) {
       startVigilance()
     }
   }, [isConnected, sdkStatus, mcpStatus, startVigilance])
@@ -305,6 +325,26 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden">
+      
+      {/* Tela de Ativação / Splash */}
+      {!isVascoReady && (
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-12 text-center space-y-8">
+           <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center animate-pulse shadow-[0_0_50px_rgba(255,255,255,0.2)]">
+              <Music2 className="w-16 h-16 text-black" />
+           </div>
+           <div className="space-y-4">
+              <h1 className="text-6xl font-black italic tracking-tighter">VASCO</h1>
+              <p className="text-white/40 font-bold tracking-[0.3em] uppercase text-sm">Pronto para assumir o leme</p>
+           </div>
+           <button 
+             onClick={startVasco}
+             className="px-12 py-6 bg-white text-black font-black italic text-2xl rounded-full hover:scale-110 active:scale-95 transition-all shadow-2xl"
+           >
+             ATIVAR ASSISTENTE ⚓
+           </button>
+        </div>
+      )}
+
       {/* Header Minimalista */}
       <header className="p-8 flex justify-between items-start z-20">
         <div className="flex flex-col">
