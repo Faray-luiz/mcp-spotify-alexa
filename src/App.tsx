@@ -130,7 +130,7 @@ export default function App() {
 
   // ── Load config ────────────────────────────────────────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem('mcp-spotify-config')
+    const saved = localStorage.getItem('mcp-spotify-config-v2')
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
@@ -480,7 +480,7 @@ export default function App() {
 
   const handleSaveConfig = (newConfig: AppConfig) => {
     setConfig(newConfig)
-    localStorage.setItem('mcp-spotify-config', JSON.stringify(newConfig))
+    localStorage.setItem('mcp-spotify-config-v2', JSON.stringify(newConfig))
     addLog('mcp', '⚙️ Configurações salvas')
   }
 
