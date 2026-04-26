@@ -102,17 +102,18 @@ export default function SettingsModal({ isOpen, config, onClose, onSave }: Props
           {/* Modelo Gemini */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-white/40 uppercase tracking-wider ml-1 flex items-center gap-2">
-              <Key className="w-3 h-3" /> Modelo Gemini (Abril/2026)
+              <Key className="w-3 h-3" /> Modelo Ativo (AI Studio)
             </label>
             <select
               value={form.geminiModel}
               onChange={e => setForm({ ...form, geminiModel: e.target.value })}
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all appearance-none"
             >
-              <option value="gemini-3.1-flash" className="bg-[#1a1a2e]">Gemini 3.1 Flash (Recomendado)</option>
-              <option value="gemini-3.1-pro" className="bg-[#1a1a2e]">Gemini 3.1 Pro</option>
-              <option value="gemini-3.1-flash-lite" className="bg-[#1a1a2e]">Gemini 3.1 Flash-Lite</option>
+              <option value="gemini-2-flash" className="bg-[#1a1a2e]">Gemini 2 Flash (Ativo)</option>
+              <option value="gemini-2.5-flash" className="bg-[#1a1a2e]">Gemini 2.5 Flash</option>
               <option value="gemini-2.5-pro" className="bg-[#1a1a2e]">Gemini 2.5 Pro</option>
+              <option value="gemini-2-flash-lite" className="bg-[#1a1a2e]">Gemini 2 Flash Lite</option>
+              <option value="gemini-3.1-flash" className="bg-[#1a1a2e]">Gemini 3.1 Flash</option>
             </select>
           </div>
 

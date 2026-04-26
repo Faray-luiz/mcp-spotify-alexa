@@ -37,7 +37,7 @@ Exemplo de Saída:
 }
 `
 
-export async function processWithGemini(text: string, apiKey: string, model: string = 'gemini-3.1-flash'): Promise<GeminiResponse> {
+export async function processWithGemini(text: string, apiKey: string, model: string = 'gemini-2-flash'): Promise<GeminiResponse> {
   if (!apiKey) {
     return { explanation: "API Key do Gemini não configurada." }
   }

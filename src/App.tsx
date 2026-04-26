@@ -83,7 +83,7 @@ export default function App() {
     spotifyClientId: '', 
     elevenLabsApiKey: '', 
     geminiApiKey: '',
-    geminiModel: 'gemini-3.1-flash' 
+    geminiModel: 'gemini-2-flash' 
   })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
@@ -134,11 +134,11 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        let model = parsed.geminiModel || 'gemini-3.1-flash'
+        let model = parsed.geminiModel || 'gemini-2-flash'
         
-        // CORREÇÃO: Força a troca de qualquer modelo antigo para o 3.1
-        if (model.includes('1.5') || model.includes('2.0') || model.includes('2.5') || model.includes('-latest')) {
-          model = 'gemini-3.1-flash'
+        // CORREÇÃO: Força a troca para o modelo que está ativo no dashboard
+        if (model.includes('1.5') || model.includes('3.1') || model.includes('-latest')) {
+          model = 'gemini-2-flash'
         }
 
         setConfig({
