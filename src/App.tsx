@@ -145,17 +145,35 @@ export default function App() {
         setIsWakeWordDetected(true)
         setMcpStatus('listening')
         await duckVolume()
+        
+        // Feedback sonoro (Bipe sutil do navegador)
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain); gain.connect(ctx.destination)
+        osc.frequency.value = 600; gain.gain.value = 0.1
+        osc.start(); osc.stop(ctx.currentTime + 0.1)
+
+        // Se passar 7 segundos sem comando, reseta o Vasco (Anti-travamento)
+        if (commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current)
+        commandTimeoutRef.current = setTimeout(() => {
+          if (isWakeWordDetected) {
+            console.log('⏰ Timeout: Nenhum comando ouvido após o gatilho.')
+            setIsWakeWordDetected(false)
+            setMcpStatus('idle')
+            restoreVolume()
+          }
+        }, 7000)
         return
       } 
       
-      // 2. Processamento do Comando (com Time-out de Silêncio)
+      // 2. Processamento do Comando
       if (isWakeWordDetected) {
         if (commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current)
         
-        // Se o navegador disser que terminou OU se houver silêncio por 1.5s
         const process = () => {
           const command = transcript.replace(/.*vasco\s*/, '').trim()
-          if (command && command.length > 2) {
+          if (command) {
             console.log('🚀 Disparando comando:', command)
             dispatchMCP(command)
             setIsWakeWordDetected(false)
@@ -165,8 +183,8 @@ export default function App() {
         if (e.results[e.results.length - 1].isFinal) {
           process()
         } else {
-          // Time-out de 1.5 segundos de silêncio para forçar o comando
-          commandTimeoutRef.current = setTimeout(process, 1500)
+          // 2 segundos de silêncio para confirmar o comando
+          commandTimeoutRef.current = setTimeout(process, 2000)
         }
       }
     }
