@@ -73,7 +73,7 @@ export default function App() {
     spotifyClientId: '', 
     elevenLabsApiKey: '', 
     geminiApiKey: '',
-    geminiModel: 'gemini-3.1-flash' 
+    geminiModel: 'gemini-2.0-flash-exp' 
   })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
