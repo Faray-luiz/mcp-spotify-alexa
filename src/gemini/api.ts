@@ -90,3 +90,16 @@ export async function processWithGemini(text: string, apiKey: string, model: str
     throw err
   }
 }
+
+export async function listModels(apiKey: string) {
+  const url = `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`
+  try {
+    const response = await fetch(url)
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error?.message || 'Erro ao listar modelos')
+    return data.models || []
+  } catch (err: any) {
+    console.error('List Models Error:', err)
+    throw err
+  }
+}

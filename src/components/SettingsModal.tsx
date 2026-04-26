@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { X, Key, Music2, Zap, Eye, EyeOff, CheckCircle, ExternalLink, Settings } from 'lucide-react'
+import { X, Key, Music2, Zap, Eye, EyeOff, CheckCircle, ExternalLink, Settings, RefreshCw } from 'lucide-react'
+import { listModels } from '../gemini/api'
 import type { AppConfig } from '../App'
 
 interface Props {
@@ -7,13 +8,31 @@ interface Props {
   config: AppConfig
   onClose: () => void
   onSave: (config: AppConfig) => void
+  addLog?: (kind: string, msg: string) => void // Adicionando opcionalmente para debug
 }
 
-export default function SettingsModal({ isOpen, config, onClose, onSave }: Props) {
+export default function SettingsModal({ isOpen, config, onClose, onSave, addLog }: Props) {
   const [form, setForm] = useState<AppConfig>(config)
   const [showSpotify, setShowSpotify] = useState(false)
   const [showGemini, setShowGemini] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [isListing, setIsListing] = useState(false)
+
+  const handleListModels = async () => {
+    if (!form.geminiApiKey) return alert('Insira a API Key primeiro')
+    setIsListing(true)
+    try {
+      const models = await listModels(form.geminiApiKey)
+      console.log('Modelos Disponíveis:', models)
+      const names = models.map((m: any) => m.name.replace('models/', '')).join(', ')
+      alert(`Modelos encontrados: ${names}`)
+      if (addLog) addLog('mcp', `📋 Modelos: ${names}`)
+    } catch (err: any) {
+      alert(`Erro: ${err.message}`)
+    } finally {
+      setIsListing(false)
+    }
+  }
 
   // Sincroniza o formulário se as props mudarem
   useEffect(() => {
@@ -115,6 +134,15 @@ export default function SettingsModal({ isOpen, config, onClose, onSave }: Props
               <option value="gemini-2-flash-lite" className="bg-[#1a1a2e]">Gemini 2 Flash Lite</option>
               <option value="gemini-3.1-flash" className="bg-[#1a1a2e]">Gemini 3.1 Flash</option>
             </select>
+            <button 
+              type="button"
+              onClick={handleListModels}
+              disabled={isListing}
+              className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1 ml-1 transition-colors uppercase tracking-widest font-bold"
+            >
+              <RefreshCw className={`w-3 h-3 ${isListing ? 'animate-spin' : ''}`} />
+              {isListing ? 'Consultando Google...' : 'Verificar modelos disponíveis na minha conta'}
+            </button>
           </div>
 
           <div className="pt-4 flex gap-3">
