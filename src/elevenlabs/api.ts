@@ -5,9 +5,20 @@
 const DEFAULT_VOICE_ID = 'EXAVITQu4vr4PUHQRZtL' // "Bella" - Clear and professional
 
 export async function speak(text: string, apiKey: string): Promise<void> {
-  if (!apiKey || !text) return
+  if (!text) return
 
-  // Use Turbo v2.5 for low latency as requested
+  // FALLBACK: Se não tiver API Key, usa a voz do sistema (Grátis)
+  if (!apiKey) {
+    return new Promise((resolve) => {
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'pt-BR'
+      utterance.rate = 1.1 // Um pouco mais rápido para parecer natural
+      utterance.onend = () => resolve()
+      window.speechSynthesis.speak(utterance)
+    })
+  }
+
+  // Se tiver API Key, usa a ElevenLabs (Alta Qualidade)
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${DEFAULT_VOICE_ID}?output_format=mp3_44100_128`
 
   try {
@@ -28,7 +39,11 @@ export async function speak(text: string, apiKey: string): Promise<void> {
     })
 
     if (!response.ok) {
-      console.error('ElevenLabs API Error:', await response.text())
+      console.warn('ElevenLabs Error, falling back to system voice...')
+      // Fallback para voz do sistema se a API der erro (ex: crédito acabou)
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'pt-BR'
+      window.speechSynthesis.speak(utterance)
       return
     }
 
