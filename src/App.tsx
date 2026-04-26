@@ -14,7 +14,6 @@ import type { SDKPlayerState, SDKState } from './spotify/sdk.ts'
 
 // MCP
 import { mcpHost } from './mcp/MCPHost.ts'
-import type { MCPEvent } from './mcp/types.ts'
 import { searchAndPlayTool, setSearchAndPlayTokenGetter } from './mcp/tools/searchAndPlay.ts'
 import { pauseTool, setPauseTokenGetter } from './mcp/tools/pauseTool.ts'
 import { currentTrackResource, setCurrentTrackTokenGetter } from './mcp/tools/currentTrack.ts'
@@ -78,6 +77,7 @@ export default function App() {
   })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
+  const [mcpEvents, setMcpEvents] = useState<any[]>([])
   const [track, setTrack] = useState<TrackInfo>(DEFAULT_TRACK)
   const [volume, setVolumeState] = useState(72)
   const [mcpStatus, setMcpStatus] = useState<'idle' | 'listening' | 'processing' | 'speaking' | 'error'>('idle')
@@ -316,6 +316,7 @@ export default function App() {
       const { tool, args, explanation } = aiResponse
 
       if (tool) {
+        setMcpEvents(prev => [...prev, { type: 'tool_call', name: tool, args }])
         await mcpHost.callTool(tool, args || {})
       }
 
