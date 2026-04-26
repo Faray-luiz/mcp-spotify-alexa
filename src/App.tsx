@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Settings, Music2, Terminal, Info } from 'lucide-react'
+import { Settings, Music2, Terminal } from 'lucide-react'
 import SettingsModal from './components/SettingsModal.tsx'
-import CommandLog from './components/CommandLog.tsx'
 import VoiceAura from './components/VoiceAura.tsx'
 import SpotifyConnect from './components/SpotifyConnect.tsx'
 import MCPConsole from './components/MCPConsole.tsx'
 
 // Spotify
-import { extractCodeFromUrl, exchangeCodeForToken, getValidToken, getStoredToken, clearToken } from './spotify/auth.ts'
+import { extractCodeFromUrl, exchangeCodeForToken, getValidToken, getStoredToken } from './spotify/auth.ts'
 import { getUserProfile, getCurrentTrack, setVolume as apiSetVolume, transferPlayback } from './spotify/api.ts'
 import type { SpotifyUser } from './spotify/api.ts'
 import { initSpotifySDK, getDeviceId, disconnectPlayer } from './spotify/sdk.ts'
@@ -79,7 +78,6 @@ export default function App() {
   })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
-  const [mcpEvents, setMcpEvents] = useState<MCPEvent[]>([])
   const [track, setTrack] = useState<TrackInfo>(DEFAULT_TRACK)
   const [volume, setVolumeState] = useState(72)
   const [mcpStatus, setMcpStatus] = useState<'idle' | 'listening' | 'processing' | 'speaking' | 'error'>('idle')
