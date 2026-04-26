@@ -131,7 +131,26 @@ export default function App() {
   // ── Load config ────────────────────────────────────────────────────────────
   useEffect(() => {
     const saved = localStorage.getItem('mcp-spotify-config')
-    if (saved) setConfig(JSON.parse(saved))
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        let model = parsed.geminiModel || 'gemini-1.5-flash'
+        
+        // CORREÇÃO: Força a troca do modelo antigo que dava erro 404
+        if (model.includes('-latest')) {
+          model = 'gemini-1.5-flash'
+        }
+
+        setConfig({
+          spotifyClientId: parsed.spotifyClientId || '',
+          elevenLabsApiKey: parsed.elevenLabsApiKey || '',
+          geminiApiKey: parsed.geminiApiKey || '',
+          geminiModel: model
+        })
+      } catch (e) {
+        console.error('Error loading config', e)
+      }
+    }
     addLog('mcp', 'MCP Host inicializado com 2 Tools e 1 Resource.')
   }, [])
 
