@@ -31,6 +31,7 @@ export interface AppConfig {
   spotifyClientId: string
   elevenLabsApiKey: string
   geminiApiKey: string
+  geminiModel: string
 }
 
 export interface LogEntry {
@@ -78,7 +79,12 @@ mcpHost
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [config, setConfig] = useState<AppConfig>({ spotifyClientId: '', elevenLabsApiKey: '', geminiApiKey: '' })
+  const [config, setConfig] = useState<AppConfig>({ 
+    spotifyClientId: '', 
+    elevenLabsApiKey: '', 
+    geminiApiKey: '',
+    geminiModel: 'gemini-1.5-flash' 
+  })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [mcpEvents, setMcpEvents] = useState<MCPEvent[]>([])
@@ -291,7 +297,7 @@ export default function App() {
     
     try {
       // 1. Ask Gemini what to do
-      const aiResponse = await processWithGemini(text, config.geminiApiKey)
+      const aiResponse = await processWithGemini(text, config.geminiApiKey, config.geminiModel)
       
       if (aiResponse.thought) {
         console.log('AI Thought:', aiResponse.thought)
