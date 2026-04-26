@@ -133,21 +133,19 @@ export default function App() {
     recognition.onresult = async (e: any) => {
       const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase()
       
-      // Detecção do Gatilho
-      if (!isWakeWordDetected && (transcript.includes('vasco') || transcript.includes('vasco'))) {
+      // Gatilho: Escuta o nome "Vasco"
+      if (!isWakeWordDetected && transcript.includes('vasco')) {
         setIsWakeWordDetected(true)
         setMcpStatus('listening')
         await duckVolume()
-        // Pequeno som de alerta ou feedback visual aqui seria bom
       } 
-      // Se já detectou o gatilho, aguarda a frase final
+      // Se o gatilho foi ativado, espera o final da frase para processar o comando
       else if (isWakeWordDetected && e.results[e.results.length - 1].isFinal) {
         const command = transcript.replace(/.*vasco\s*/, '').trim()
         if (command) {
           dispatchMCP(command)
         }
         setIsWakeWordDetected(false)
-        // O restoreVolume é feito dentro do dispatchMCP após a IA falar
       }
     }
 
@@ -295,15 +293,28 @@ export default function App() {
 
       {/* Centro: A Aura do Vasco */}
       <main className="flex-1 flex flex-col items-center justify-center relative p-12">
-        {!isConnected ? (
-          <div className="w-full max-w-sm">
+        {(!isConnected || sdkStatus !== 'ready') ? (
+          <div className="w-full max-w-sm space-y-8 animate-in fade-in duration-1000">
+            <div className="text-center space-y-2 mb-8">
+               <h2 className="text-2xl font-black italic tracking-tighter">CONECTANDO AO NAVIO...</h2>
+               <p className="text-white/40 text-xs font-bold tracking-widest">O VASCO PRECISA DE ACESSO AO SPOTIFY PREMIUM</p>
+            </div>
             <SpotifyConnect 
               clientId={config.spotifyClientId} 
               redirectUri={REDIRECT_URI} 
               user={spotifyUser} 
               sdkStatus={sdkStatus} 
+              sdkError={sdkError}
               onDisconnect={() => setSpotifyUser(null)} 
             />
+            {sdkStatus === 'ready' && isConnected && (
+               <button 
+                 onClick={() => setMcpStatus('idle')}
+                 className="w-full py-4 bg-white text-black font-black italic rounded-2xl hover:scale-105 transition-all shadow-2xl shadow-white/10"
+               >
+                 ASSUMIR O LEME ⚓
+               </button>
+            )}
           </div>
         ) : (
           <VoiceAura status={mcpStatus} isWakeWordDetected={isWakeWordDetected} />
