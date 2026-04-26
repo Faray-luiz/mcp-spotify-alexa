@@ -313,9 +313,11 @@ export default function App() {
     setCurrentCommand(text)
     addLog('user', `🎤 "${text}"`)
     setMcpStatus('processing')
+    console.log(`Using Gemini Model: ${config.geminiModel}`)
     
     try {
       // 1. Ask Gemini what to do
+      addLog('mcp', `🤖 Enviando para ${config.geminiModel}...`)
       const aiResponse = await processWithGemini(text, config.geminiApiKey, config.geminiModel)
       
       if (aiResponse.thought) {
