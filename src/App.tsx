@@ -193,20 +193,29 @@ export default function App() {
         if (commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current)
         
         const process = () => {
+          // Se ainda estiver no modo gatilho, vamos processar
+          if (!isWakeWordDetectedRef.current) return
+
           const command = transcript.replace(/.*vasco\s*/, '').trim()
-          if (command && isWakeWordDetectedRef.current) {
+          if (command && command.length > 1) {
             console.log('🚀 Disparando comando:', command)
             dispatchMCP(command)
-            isWakeWordDetectedRef.current = false
-            setIsWakeWordDetected(false)
+          } else {
+            console.log('🤷 Comando vazio ou não entendido. Resetando...')
+            setMcpStatus('idle')
+            restoreVolume()
           }
+          
+          // SEMPRE reseta o estado de gatilho aqui
+          isWakeWordDetectedRef.current = false
+          setIsWakeWordDetected(false)
         }
 
         if (e.results[e.results.length - 1].isFinal) {
           process()
         } else {
-          // Time-out de silêncio para confirmar comando (2s)
-          commandTimeoutRef.current = setTimeout(process, 2000)
+          // 2.5 segundos de silêncio confirmam o fim da tentativa
+          commandTimeoutRef.current = setTimeout(process, 2500)
         }
       }
     }
