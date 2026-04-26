@@ -42,7 +42,7 @@ export async function processWithGemini(text: string, apiKey: string): Promise<G
     return { explanation: "API Key do Gemini não configurada." }
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`
 
   try {
     const response = await fetch(url, {
