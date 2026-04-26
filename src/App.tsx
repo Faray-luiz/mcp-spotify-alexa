@@ -192,31 +192,29 @@ export default function App() {
       if (isWakeWordDetectedRef.current) {
         if (commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current)
         
+        // Atualiza a aura para mostrar que está captando cada palavra
+        setMcpStatus('listening')
+
         const process = () => {
-          // Se ainda estiver no modo gatilho, vamos processar
           if (!isWakeWordDetectedRef.current) return
 
           const command = transcript.replace(/.*vasco\s*/, '').trim()
           if (command && command.length > 1) {
-            console.log('🚀 Disparando comando:', command)
+            console.log('🚀 Processando comando completo:', command)
             dispatchMCP(command)
           } else {
-            console.log('🤷 Comando vazio ou não entendido. Resetando...')
+            console.log('🤷 Nada captado após o gatilho. Resetando...')
             setMcpStatus('idle')
             restoreVolume()
           }
           
-          // SEMPRE reseta o estado de gatilho aqui
           isWakeWordDetectedRef.current = false
           setIsWakeWordDetected(false)
         }
 
-        if (e.results[e.results.length - 1].isFinal) {
-          process()
-        } else {
-          // 2.5 segundos de silêncio confirmam o fim da tentativa
-          commandTimeoutRef.current = setTimeout(process, 2500)
-        }
+        // AGORA: Ignoramos o isFinal para não cortar o usuário.
+        // Esperamos 3 segundos de silêncio TOTAL para garantir que a frase acabou.
+        commandTimeoutRef.current = setTimeout(process, 3000)
       }
     }
 
